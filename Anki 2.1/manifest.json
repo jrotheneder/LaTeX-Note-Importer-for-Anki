@@ -1,0 +1,9 @@
+{
+    "name": "LaTeX-Note-Importer-for-Anki (modded to allow HTML in plain fields)",
+    "package": "LaTeX-Note-Importer-HTML-in-plain",
+    "conflicts": [
+        "1199027445"
+    ]
+}
+
+
