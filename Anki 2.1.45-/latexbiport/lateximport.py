@@ -92,7 +92,11 @@ class LatexImporter(NoteImporter):
     # parsing functions for different parts of the latex document
     # 1. parsing functions for different field types/tags
     def process_plain(self, value, note):
-        value = self.textToHtml(value)
+
+        # leave plain fields unprocessed in order to copy raw html from 
+        # LaTeX source document (this allows for clickable hyperlinks)
+        #value = self.textToHtml(value)
+
         note.fields.append(value)
 
     def process_latex(self, value, note):
@@ -307,7 +311,10 @@ class LatexImporter(NoteImporter):
         string = string.strip()
         string = re.sub(r"^[ \t]*", "", string, flags=re.MULTILINE)
         # see note below
-        string = self.textToHtml(string)
+
+        # leave plain fields unprocessed in order to copy raw html from 
+        # LaTeX source document (this allows for clickable hyperlinks)
+        #string = self.textToHtml(string)
         note.fields.append(string)
 
         
