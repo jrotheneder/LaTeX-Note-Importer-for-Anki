@@ -92,8 +92,7 @@ class LatexImporter(NoteImporter):
     # parsing functions for different parts of the latex document
     # 1. parsing functions for different field types/tags
     def process_plain(self, value, note):
-        # leave plain fields bare to support html from tex
-#       value = self.textToHtml(value) 
+        value = self.textToHtml(value)
         note.fields.append(value)
 
     def process_latex(self, value, note):
@@ -210,7 +209,13 @@ class LatexImporter(NoteImporter):
         # may return several documents if file was written like that,
         # but I'll ignore all except the first,
         # just like any latex interpreter would
-        self.preamble, document, ci = pieces[0]
+        if pieces:
+            self.preamble, document, ci = pieces[0]
+        else:
+            self.log = ["\nWARNING: Unable to determine document environment. Interpreted the whole file as document environment instead.\n"]
+            self.preamble = ""
+            document = fileString
+            ci = 0  # unsure about this line; added [2021-02-27] as a hotfix without understanding what ci is
         self.preamble = self.preamble + "\\begin{document}"
         self.postamble = "\\end{document}" + post
         self.processDocument(document)
@@ -227,7 +232,7 @@ class LatexImporter(NoteImporter):
             note.tags = []
         # clean up rubbishList & provide feedback
         self.rubbishList = [s.strip() for s in self.rubbishList if re.search("\S", s) != None]
-        self.log = self.warningList
+        self.log = self.log + self.warningList
         if len(self.rubbishList) > 0:
                 self.log = self.log + [str(len(self.rubbishList)) + " lines have been ignored – they occurred in between notes or in between fields.\n"]
 
@@ -302,11 +307,20 @@ class LatexImporter(NoteImporter):
         string = string.strip()
         string = re.sub(r"^[ \t]*", "", string, flags=re.MULTILINE)
         # see note below
-        # leave plain fields bare to support html from tex
-#       string = self.textToHtml(string)
+        string = self.textToHtml(string)
         note.fields.append(string)
 
-importing.Importers = importing.Importers + ((_("Latex Notes (*.tex)"), LatexImporter),)
+        
+### This line worked up to version 2.1.44:
+#        importing.Importers = importing.Importers + ((_("Latex Notes (*.tex)"), LatexImporter),)
+### This is the replacement suggested by Kelciour:
+def myImporters(col, _old):
+    ret = _old(col)
+    ret += ((_("Latex Notes (*.tex)"), LatexImporter),)
+    return ret
+
+importing.importers = wrap(importing.importers, myImporters, "around")
+###
 
 # note:
 # The command
