@@ -7,5 +7,6 @@ This fork differs from the original project in two points:
 * Html can code can be put into plain fields and used to generated clickable
    hyperlinks in Anki cards using the usual `<a href="url"> Link title </a>`
    syntax. This is useful for adding sources, further material etc. to cards.
-* There is a new field type, `clozefield`, which can be used to generate cloze
-  cards from LaTeX source code. See `docs/cloze_examples.tex` for details and examples.  
+* There is a new field type, `clozefield`, which can be used to generate [cloze
+  cards](https://docs.ankiweb.net/editing.html#cloze-deletion)  from LaTeX
+  source code. See `docs/cloze_examples.tex` for details and examples.  

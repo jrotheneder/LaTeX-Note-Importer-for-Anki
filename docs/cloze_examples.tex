@@ -1,5 +1,32 @@
 \documentclass[12pt]{article}
-\input{../preambles/preview_preamble.tex}
+\special{papersize=3in,5in}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,amsmath}
+\pagestyle{empty}
+\setlength{\parindent}{0in}
+\newcommand{\detail}[1]{{\scriptsize(#1)\par}~}
+\newcommand{\refs}[1]{{\scriptsize\textit{Refs: }#1\par}\hfill.}
+\newcommand*{\abs}[1]{\left\vert#1\right\vert}
+\newcommand*{\NN}{\mathbb{N}}
+\newcommand*{\ZZ}{\mathbb{Z}}
+\newcommand*{\QQ}{\mathbb{Q}}
+\newcommand*{\FF}{\mathbb{F}}
+\newcommand*{\PP}{\mathbb{P}}
+\newcommand*{\units}{\times}
+
+\usepackage{xcolor} 
+
+%%% commands that do not need to imported into Anki:
+\usepackage{mdframed}
+\newcommand*{\tags}[1]{\paragraph{tags: }#1\bigskip}
+\newcommand*{\xfield}[1]{\begin{mdframed}\centering #1\end{mdframed}\bigskip}
+\newenvironment{field}{}{}
+\newcommand*{\xplain}[1]{\begin{mdframed}\texttt{#1}\end{mdframed}\bigskip}
+\newenvironment{plain}{\ttfamily}{\par}
+\newenvironment{note}{}{}
+\newenvironment{clozefield}{}{}
+\newenvironment{cloze}{\textcolor{red}{$\{$}}{\textcolor{red}{$\}$}}
+% END OF THE PREAMBLE
 \begin{document}
 
 \section{Testing Clozes}
@@ -8,14 +35,13 @@
 % Some examples taken from https://www.reddit.com/r/Anki/comments/y99mqk/how_i_use_anki_for_mathematics/
 \begin{note}
     \xplain{sujg-47ky-fcvp}
-    \newline
     \begin{clozefield}
-        A binary operation $ · $ on a set $ M $ is called 
+        A binary operation $ \cdot $ on a set $ M $ is called 
         \begin{cloze}
             commutative,
         \end{cloze}
         if 
-        \begin{cloze} $ a · b = b ·a  $ for all $ a,b ∈ M $. \end{cloze}
+        \begin{cloze} $ a \cdot b = b \cdot a  $ for all $ a,b \in M $. \end{cloze}
     \end{clozefield} 
     \begin{field} \end{field}
 \end{note}
@@ -23,7 +49,8 @@
 \begin{note}
     \xplain{kjbu-lex0-7lvj}
     \begin{clozefield}
-        Let $ X,Y $ be sets. The notation \begin{cloze} $ f\colon X → Y $ \end{cloze}
+        Let $ X,Y $ be sets. The notation \begin{cloze} $ f\colon X \rightarrow
+        Y $ \end{cloze}
         means that \begin{cloze} $ f $ is a function from $ X $ to $ Y $. \end{cloze}
     \end{clozefield}
 \end{note}
@@ -37,9 +64,10 @@
                 { (x-a)^{2}+(y-b)^{2}=r^{2}.}
             \end{equation*}
         \end{cloze}
-        describes a \begin{cloze} circle \end{cloze}
-        with coordinates \begin{cloze}  $(a,b)$ \end{cloze} 
-        and radius \begin{cloze} $ r $ \end{cloze}.
+        describes a 
+        \begin{cloze} circle \end{cloze} centered at \begin{cloze}  
+        $(a,b)$ \end{cloze} with radius \begin{cloze} 
+        $ r $ \end{cloze}.
     \end{clozefield}
 \end{note}
 
