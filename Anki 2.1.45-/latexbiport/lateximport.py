@@ -164,7 +164,7 @@ class LatexImporter(NoteImporter):
     def findIter(self, string, findfun):
         """
         repeatedly searches for patterns in a string using a provided function
-        (findfun) and returns a list of positions where the patterns occur.
+        findfun and returns a list of positions where the patterns occur.
         """
         poslist = []
         pos = (0, 0)

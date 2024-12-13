@@ -1,6 +1,6 @@
 {
-    "name": "LaTeX-Note-Importer-for-Anki (modded to allow HTML in plain fields)",
-    "package": "LaTeX-Note-Importer-HTML-in-plain",
+    "name": "LaTeX-Note-Importer-for-Anki (with cloze cards and HTML in plain fields)",
+    "package": "LaTeX-Note-Importer-cloze-plain-html",
     "conflicts": [
         "1199027445"
     ]
