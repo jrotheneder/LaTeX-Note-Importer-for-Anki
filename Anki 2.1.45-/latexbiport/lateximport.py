@@ -156,11 +156,16 @@ class LatexImporter(NoteImporter):
             return (p + mo.start(), p + mo.end())
         else:
             if warning == True:
-                self.warningList.append("\nWARNING: The environment containing the following string seems to be corrupted.\n")
+                self.warningList.append("\nWARNING: The environment containing the" + \
+                                        " following string seems to be corrupted.\n")
                 self.warningList.append(string + "\n")
             return None
 
     def findIter(self, string, findfun):
+        """
+        repeatedly searches for patterns in a string using a provided function
+        (findfun) and returns a list of positions where the patterns occur.
+        """
         poslist = []
         pos = (0, 0)
         while True:
@@ -170,7 +175,8 @@ class LatexImporter(NoteImporter):
             if adpos[1] == adpos[0]:
                 # This really shouldn't happen, I just want to make sure
                 # I don't land in an infinite loop
-                self.warningList.append("\nERROR: An error occurred while parsing the following string. Import may have failed.\n")
+                self.warningList.append("\nERROR: An error occurred while parsing the " + \
+                        " following string. Import may have failed.\n")
                 self.warningList.append(string + "\n")
                 break
             pos = (pos[1] + adpos[0], pos[1] + adpos[1])
@@ -178,10 +184,14 @@ class LatexImporter(NoteImporter):
         return poslist
 
     def cutIntoPieces(self, string, cList):
-        """returns a list of the strings before and in between all sections
-        marked by the commands in cList, and a list of all sections"""
+        """
+        returns a list of the strings before and in between all sections
+        marked by the commands in cList, and a list of all sections. 
+        uses only cmd['beginfun'] and cmd['endfun'] for cmd in cList
+        This function has no side effects 
+        """
         triples = [(ao[0], ao[1], cList.index(command))
-                   for command in cList
+                   for command in cList # iterate through the dicts of commands in cList
                    for ao in self.findIter(string, command['beginfun'])]
         triples.sort()
         Begins = [p[0] for p in triples] + [len(string)]
@@ -207,8 +217,11 @@ class LatexImporter(NoteImporter):
 
     def processFile(self, fileString):
         docCommands = [{'beginfun': lambda string: self.findCommand(string, r"begin", r"document"),
-                        'endfun': lambda string: self.findCommand(string, r"end", r"document", warning=True),
-                        'process': lambda string: self.processDocument(string)}]
+                        'endfun': lambda string: self.findCommand(string, r"end", r"document", warning=True)}
+                    # [2024-12-11] removed 'process'. I don't see why this would be needed, since cutIntoPieces uses 
+                    # only the keys beginfun and endfun of its argument cList.
+#                         'process': lambda string: self.processDocument(string)} 
+                       ]
         pieces, post = self.cutIntoPieces(fileString, docCommands)
         # may return several documents if file was written like that,
         # but I'll ignore all except the first,
@@ -216,13 +229,14 @@ class LatexImporter(NoteImporter):
         if pieces:
             self.preamble, document, ci = pieces[0]
         else:
-            self.log = ["\nWARNING: Unable to determine document environment. Interpreted the whole file as document environment instead.\n"]
+            self.log = ["\nWARNING: Unable to determine document environment. " + \
+                "Interpreted the whole file as document environment instead.\n"]
             self.preamble = ""
             document = fileString
-            ci = 0  # unsure about this line; added [2021-02-27] as a hotfix without understanding what ci is
+#             ci = 0  # unsure about this line; added [2021-02-27] as a hotfix without understanding what ci is
         self.preamble = self.preamble + "\\begin{document}"
         self.postamble = "\\end{document}" + post
-        self.processDocument(document)
+        self.processDocument(document) # populates self.noteList
         # make all notes same length and
         # add tags as extra field at the very end
         # (Adding tags as field is necessary for tags to be "update-able":
@@ -245,9 +259,13 @@ class LatexImporter(NoteImporter):
         noteCommands = [{'beginfun': lambda string: self.findCommand(string, r"begin", r"note"),
                          'endfun': lambda string: self.findCommand(string, r"end", r"note", warning=True),
                          'process': lambda string: self.processNote(string, globalTags)}]
-        pieces, post = self.cutIntoPieces(document, noteCommands)
+        pieces, post = self.cutIntoPieces(document, noteCommands) 
         for pre, value, ci in pieces:
-            globalTags = self.processInterNoteText(pre, globalTags)
+            # get tags from text preceding note, if any; if none are found, keep
+            # using the previous tags
+            globalTags = self.processInterNoteText(pre, globalTags) 
+
+            # create note and append to self.noteList
             noteCommands[ci]['process'](value)
              
     def processNote(self, noteString, globalTags):
@@ -273,7 +291,13 @@ class LatexImporter(NoteImporter):
                           'process': lambda string: self.processPlainField(string, newNote)},
                          {'beginfun': lambda string: self.findCommand(string, r"tags", r"?"),
                           'endfun': self.findClosingBrace,
-                          'process': lambda string: self.processTags(string, newNote)}
+                          'process': lambda string: self.processTags(string, newNote)}, 
+                         {'beginfun': lambda string: self.findCommand(string, r"clozefield"),
+                          'endfun': lambda string: self.findCommand(string, r"endclozefield"),
+                          'process': lambda string: self.processClozeField(string, newNote)},
+                         {'beginfun': lambda string: self.findCommand(string, r"begin", r"clozefield"),
+                          'endfun': lambda string: self.findCommand(string, r"end", r"clozefield", warning=True),
+                          'process': lambda string: self.processClozeField(string, newNote)}
                          ]
         pieces, post = self.cutIntoPieces(noteString, fieldCommands)
         for pre, value, ci in pieces:
@@ -283,12 +307,17 @@ class LatexImporter(NoteImporter):
         self.noteList.append(newNote)
 
     def processInterNoteText(self, string, globalTags):
+        """
+        Processes text preceding a note. If tags are found, those are returned.
+        Otherwise, the second argument globalTags is returned.
+        """
         tagCommands = [{'beginfun': lambda string: self.findCommand(string, r"tags", "?"),
                         'endfun': self.findClosingBrace,
                         'process': None}
                        ]
         pieces, post = self.cutIntoPieces(string, tagCommands)
         self.rubbishList.extend([pre for pre, value, ci in pieces] + [post])
+
         tags = [tag for pre, value, ci in pieces for tag in value.split() if tag != ""]
         if len(tags) > 0:
             return tags
@@ -305,6 +334,43 @@ class LatexImporter(NoteImporter):
             # see note below
             string = self.textToHtml(string)
             string = r"[latex]" + string + r"[/latex]"
+        note.fields.append(string)
+
+    def processClozeField(self, string, note): 
+        if string.strip() == "":
+            note.fields.append(string)
+            return 
+
+        string = r"[latex]" + string + r"[/latex]"
+
+        # replace all instances of }} with } } to avoid cloze conflicts 
+        # (see https://docs.ankiweb.net/math.html#cloze-conflicts)
+        string = string.replace("}}", "} }")
+
+        # the first pattern matches additional newlines and spaces after
+        # begin{cloze} and before end{cloze} (later discarded), the second
+        # pattern can be used to keep the newlines and spaces 
+        # NOTE if using the second pattern, need to change the assignment of
+        # content to match.group(1) instead of match.group(2)
+        pattern = re.compile(r"\\begin{cloze}(\n\s*)?(.*?)(\n\s*)?\\end{cloze}", 
+                     re.DOTALL)
+#         pattern = re.compile(r"\\begin{cloze}(.*?)\\end{cloze}", re.DOTALL)
+
+        def replace_cloze(match, counter=[0]):
+            """
+            Replacement function, used to replace the i-th instance of
+            \begin{cloze}xxxx\end{cloze} with {{ci::xxx}}. 
+            """
+            counter[0] += 1  # increment counter on each match
+            content = match.group(2) # get content inside \cloze{xxx} pattern 
+
+            # This seems to work fine and allows cloze deletions within latex environments
+            return f"{{{{c{counter[0]}::{content} }}}}"  
+        
+#         self.log.append(string) # for debugging
+        string = pattern.sub(replace_cloze, string)
+        string = self.textToHtml(string)
+
         note.fields.append(string)
         
     def processPlainField(self, string, note):
