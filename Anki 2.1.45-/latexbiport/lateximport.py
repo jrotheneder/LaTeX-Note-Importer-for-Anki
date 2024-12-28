@@ -337,6 +337,12 @@ class LatexImporter(NoteImporter):
         note.fields.append(string)
 
     def processClozeField(self, string, note): 
+        """
+        Proccess cloze fields (i.e. text between \begin{clozefield} and
+        \end{clozefield}), by replacing the i-th instance of \begin{cloze} 
+        with {{ci:: and each instance of \end{cloze} with }}.
+        """
+
         if string.strip() == "":
             note.fields.append(string)
             return 
@@ -347,28 +353,25 @@ class LatexImporter(NoteImporter):
         # (see https://docs.ankiweb.net/math.html#cloze-conflicts)
         string = string.replace("}}", "} }")
 
-        # the first pattern matches additional newlines and spaces after
-        # begin{cloze} and before end{cloze} (later discarded), the second
-        # pattern can be used to keep the newlines and spaces 
-        # NOTE if using the second pattern, need to change the assignment of
-        # content to match.group(1) instead of match.group(2)
-        pattern = re.compile(r"\\begin{cloze}(\n\s*)?(.*?)(\n\s*)?\\end{cloze}", 
-                     re.DOTALL)
-#         pattern = re.compile(r"\\begin{cloze}(.*?)\\end{cloze}", re.DOTALL)
+        # match (and later discard) up to oen newline and additional spaces after
+        # \begin{cloze} and before \end{cloze}, which makes for nicer formatting
+        # in Anki
+        end_pattern = re.compile(r"(\n\s*)?\\end{cloze}")
+        begin_pattern = re.compile(r"\\begin{cloze}(\n\s*)?(.*?)", re.DOTALL)
+
+        string = end_pattern.sub("}}", string)
 
         def replace_cloze(match, counter=[0]):
             """
             Replacement function, used to replace the i-th instance of
-            \begin{cloze}xxxx\end{cloze} with {{ci::xxx}}. 
+            \\begin{cloze}xxxx with {{ci::xxxx. 
             """
             counter[0] += 1  # increment counter on each match
-            content = match.group(2) # get content inside \cloze{xxx} pattern 
+            content = match.group(2) # get content after pattern 
 
-            # This seems to work fine and allows cloze deletions within latex environments
-            return f"{{{{c{counter[0]}::{content} }}}}"  
+            return f"{{{{c{counter[0]}::{content}"  
         
-#         self.log.append(string) # for debugging
-        string = pattern.sub(replace_cloze, string)
+        string = begin_pattern.sub(replace_cloze, string)
         string = self.textToHtml(string)
 
         note.fields.append(string)
@@ -376,9 +379,8 @@ class LatexImporter(NoteImporter):
     def processPlainField(self, string, note):
         string = string.strip()
         string = re.sub(r"^[ \t]*", "", string, flags=re.MULTILINE)
-        # see note below
 
-        # leave plain fields unprocessed in order to copy raw html from 
+        # NOTE: we leave plain fields unprocessed in order to copy raw html from 
         # LaTeX source document (this allows for clickable hyperlinks)
         #string = self.textToHtml(string)
         note.fields.append(string)
